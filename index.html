@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Random Spin Wheel</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+    <script src="https://s0.2mdn.net/ads/studio/cached_libs/tweenmax_1.19.0_643d6911392a3398cb1607993edabfa7_min.js"></script>
+    <style type="text/css">
+      body {
+        margin: 0;
+        padding: 0;
+        /*--conic: conic-gradient(
+            #4e79a7 0,
+            #4e79a7 38%,
+            #f28e2c 0,
+            #f28e2c 61%,
+            #e15759 0,
+            #e15759 77%,
+            #76b7b2 0,
+            #76b7b2 87%,
+            #59a14f 0,
+            #59a14f 93%,
+            #edc949 0,
+            #edc949 100%
+        );*/
+        --conic: conic-gradient(rgb(42,32,250) 0,rgb(42,32,250) 16.666666666666668%,rgb(124,42,164) 0,rgb(124,42,164) 33.333333333333336%,rgb(68,116,175) 0,rgb(68,116,175) 50%,rgb(232,152,97) 0,rgb(232,152,97) 66.66666666666667%,rgb(40,2,112) 0,rgb(40,2,112) 83.33333333333334%,rgb(9,161,179) 0,rgb(9,161,179) 100%);
+      }
+      .wheel-holder {
+        position: absolute;
+        left: calc(50% - 300px);
+        top: 50%;
+        width: 95vw;
+        max-width: 600px;
+        filter: drop-shadow(0px 5px 8px rgba(0,0,0,0.5));
+      }
+      @media (max-width: 650px) {
+        .wheel-holder {
+          left: calc(50% - 47.5vw);
+          width: 95vw;
+        }
+      }
+      .wheel {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+      }
+      .parent {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 95vw;
+        max-width: 600px;
+        height: 95vw;
+        max-height: 600px;
+        transform: translate(-50%, -50%);
+        border-radius: 100%;
+        overflow: hidden;
+
+        background:
+          radial-gradient(
+            circle closest-side,
+            transparent 100%,
+            white 0
+          ),
+          var(--conic)
+      }
+      .children {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        user-select: none;
+        pointer-events: none;
+      }
+      .child {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 30vw;
+        max-width: 200px;
+        height: 1px;
+        transform: translateY(-50%);
+        line-height: 0;
+        text-align: right;
+        color: white;
+        font-size: 20px;
+        font-size: clamp(16px, 3.23vw, 20px);
+      }
+      .line {
+        position: absolute;
+        top: 50%;
+        left: calc(50% + 300px);
+        width: 60px;
+        height: 1px;
+        transform: translate(-50%, -50%);
+      }
+      @media (max-width: 650px) {
+      .line {
+          left: calc(50% + 47.5vw);
+        }
+      }
+      .inside-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 60px;
+        height: 1px;
+        background-color: black;
+        font-size: 64px;
+        line-height: 0.2;
+        text-shadow: 1px 1px 5px black;
+      }
+      .flex {
+        position: relative;
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        margin-top: 0;
+        margin-left: 0;
+        margin-right: auto;
+      }
+      @media (max-width: 650px) {
+      .flex {
+          margin-top: 95vh;
+          margin-left: auto;
+          margin-right: auto;
+        }
+      }
+      textarea {
+        height: 14em;
+      }
+      .winner-box {
+        width: 250px;
+        height: 120px;
+        background-color: lightcoral;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 5px 8px rgba(0, 0, 0, 0.5);
+        text-align: center;
+      }
+      .hidden {
+        display: none;
+      }
+      .dot {
+        position: absolute;
+        left: calc(50% - 10px);
+        top: calc(50% - 10px);
+        width: 20px;
+        height: 20px;
+        background-color: red;
+      }
+    </style>
+    <script type="text/javascript">
+      var winnerIndex = -1;
+      var sliceArr = []
+      var tween;
+      var inited = function() {
+        console.log('inited')
+        var parent = document.querySelector('.parent')
+        var children = document.querySelector('.children')
+        var arrChild = document.querySelectorAll('.child')
+        var counts = arrChild.length
+        var slice = 360 / counts
+        var conicArr = []
+
+        sliceArr = []
+
+        for (var i = 0; i < counts; i++) {
+          TweenMax.set(arrChild[i], { 
+            rotation: i * slice, 
+            transformOrigin: 'left center', 
+            // opacity: 1 - (i/10),
+            // height: 360 / counts
+          })
+          var hex = randomHex()
+          conicArr.push(hex + ' 0')
+
+          conicArr.push(hex + ' ' + (100 / counts * (i + 1)) + '%')
+        }
+
+        TweenMax.set('.wheel', { clearProps: 'transform' }); 
+        TweenMax.set('.parent', { rotation: 90 - slice / 2 })
+
+
+        document.querySelector('body').style.setProperty('--conic', 'conic-gradient(' + conicArr.join(',') + ')')
+      }
+      var randomHex = function() {
+        var r = parseInt(Math.random() * 245)
+        var g = parseInt(Math.random() * 245)
+        var b = parseInt(Math.random() * 245)
+
+        return 'rgb(' + [r, g, b].join(',') + ')'
+      }
+
+      var rotation = 0
+      var rand360 = 0
+      var rotate = function() {
+        var parent = document.querySelector('.parent')
+        var arrChild = document.querySelectorAll('.child')
+        var counts = arrChild.length
+        var slice = 360 / counts
+        var rand = parseInt(Math.random() * arrChild.length)
+        var randomWinner = 0;
+
+        rotation = 0
+        TweenMax.set('.wheel', { rotation: 0 })
+
+        rand360 = parseInt(Math.random() * counts)
+        var rangeSlice = Math.random() * (slice) - (slice / 2)
+        rotation = ((360 * (counts > 4 ? 4 : 8 - counts)) + rand360 * slice + rangeSlice)
+        randomWinner = counts - rand360
+
+        // console.log(randomWinner, rand360 * slice, rand360, rotation,  rangeSlice)
+
+        if (randomWinner === counts) randomWinner = 0
+
+        // console.log(rotation, (rotation - slice/2) % 360, randomWinner, arrChild[randomWinner])
+
+        winnerIndex = randomWinner
+
+        tween = TweenMax.to('.wheel', (counts > 4 ? 5 : 9 - counts), { rotation: '+=' + rotation, ease: Power4.easeOut, onCompleteParams:[arrChild[randomWinner]], onComplete: showWinner, onUpdate: moveNeedle })
+      }
+      var showWinner = function(win) {
+        document.querySelector('.label').innerText = 'Pointed at: ';
+        document.querySelector('.name').innerText = win.innerText;
+        document.querySelector('.winner-box').classList.remove('hidden')
+      }
+      var showLastWinner = function(win) {
+        setTimeout(function() {
+          document.querySelector('.label').innerText = 'Winner is: ';
+          document.querySelector('.name').innerText = document.querySelector('.names').value;
+          document.querySelector('.winner-box').classList.remove('hidden')
+        }, 1000)
+      }
+      var needleEnable = true
+      var moveNeedle = function() {
+        // console.log(tween.time())
+
+        return;
+        var wheel = document.querySelector('.wheel')
+        var arrChild = document.querySelectorAll('.child')
+        var counts = arrChild.length
+        var slice = 360 / counts
+        var angle = wheel._gsTransform.rotation
+        // if (angle % slice < slice / 2) return
+        if (angle % 20 < 10) return
+        // if (!needleEnable) return
+        // TweenMax.set('.inside-line', { rotation: -15, transformOrigin: 'center right' })
+        TweenMax.set('.inside-line', { rotation: 0 })
+        TweenMax.to('.inside-line', 0.1, { rotation: -20, transformOrigin: 'center right', onComplete: function() {
+          // needleEnable = true
+          TweenMax.to('.inside-line', 0.1, { rotation: 0 })
+        } })
+        needleEnable = false
+      }
+      var updateName = function() {
+        var names = document.querySelector('.names')
+        var splitNames = names.value.split('\n')
+
+        document.querySelector('.children').innerHTML = '<div class="child">' + splitNames.join('</div><div class="child">') + '</div>'
+
+        inited()
+      }
+      var closeBox = function() {
+        document.querySelector('.winner-box').classList.add('hidden')
+      }
+      var deleteWinner = function() {
+        var names = document.querySelector('.names')
+        var splitNames = names.value.split('\n')
+
+        splitNames.splice(winnerIndex, 1)
+
+        names.value = splitNames.join('\n')
+
+        updateName()
+        closeBox()
+
+        if (splitNames.length <= 1) showLastWinner()
+
+      }
+    </script>
+  </head>
+  <body onload="inited()">
+
+    <div class="world">
+      <div class="wheel-holder">
+        <div class="wheel">
+          <div class="parent" onclick="rotate()"></div>
+          <div class="children">
+            <div class="child">name 0</div>
+            <div class="child">name 1</div>
+            <div class="child">name 2</div>
+            <div class="child">name 3</div>
+            <div class="child">name 4</div>
+            <div class="child">name 5</div>
+          </div>
+        </div>
+      <div class="line">
+        <div class="inside-line">👈</div>
+      </div>
+      </div>
+      <!-- <div class="dot"></div> -->
+
+      <div class="flex">
+        <textarea class="names">name 0
+name 1
+name 2
+name 3
+name 4
+name 5</textarea>
+        <button onclick="updateName()">Update</button>
+      </div>
+
+      <div class="winner-box hidden">
+        <p class="label">Pointed at:</p>
+        <p class="name">ME</p>
+        <button onclick="closeBox()">Close</button>
+        <button onclick="deleteWinner()">Delete</button>
+      </div>
+    </div>
+
+
+    
+  </body>
+</html>
